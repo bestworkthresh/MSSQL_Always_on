@@ -1,0 +1,12 @@
+﻿-- 01_查詢伺服器上各個資料庫的「讀取認可快照」、「快照集隔離」之狀態
+SELECT name N'資料庫', snapshot_isolation_state N'快照集隔離交易狀態',
+-- snapshot_isolation_state_desc N'快照集隔離交易狀態的描述',
+ is_read_committed_snapshot_on N'啟用讀取認可快照',
+/*1 = READ_COMMITTED_SNAPSHOT 選項為 ON。 讀取認可隔離等級下的讀取作業是以快照集掃描為基礎，沒有取得鎖定。
+0 = READ_COMMITTED_SNAPSHOT 選項為 OFF (預設)。 讀取認可隔離等級下的讀取作業是使用共用鎖定。*/
+ is_memory_optimized_elevate_to_snapshot_on N'關於記憶體的讀取認可快照'
+/*1 = 最低隔離等級為 SNAPSHOT。
+0 = 不提高隔離等級。*/
+FROM sys.databases
+ORDER BY 4 DESC
+GO

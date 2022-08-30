@@ -1,0 +1,10 @@
+use DBA_TEST
+go 
+
+
+select *
+from INFORMATION_SCHEMA.SCHEMATA
+
+
+
+alter AUTHORIZATION ON SCHEMA  :: [db_owner] to [db_owner]

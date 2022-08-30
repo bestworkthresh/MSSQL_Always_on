@@ -1,0 +1,13 @@
+
+/*
+這只能查到資料庫有的資料表不是從SP內容去列表Table，如果要查哪張Table有缺效果不太優
+*/
+
+SELECT DISTINCT
+SP_Name = O.name,
+Table_Name = OO.name
+FROM sys.sysdepends D 
+INNER JOIN sys.sysobjects O ON O.id = D.id
+INNER JOIN sys.sysobjects OO ON OO.id = D.depid
+WHERE O.xtype = 'P'
+

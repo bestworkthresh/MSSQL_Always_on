@@ -1,0 +1,78 @@
+--組出所有使用者資料庫備份語法
+SELECT name, 'BACKUP DATABASE [' + name + ']
+TO DISK = ''D:\DB_Backup\' + name + '_FULL.bak''
+WITH NOFORMAT, INIT, SKIP, NOREWIND, NOUNLOAD, COPY_ONLY, COMPRESSION, STATS = 10
+GO'
+FROM sys.databases
+WHERE name not in ('master','model','msdb','tempdb','distribution')
+ORDER BY name
+
+
+--組出所有使用者資料庫還原語法
+SET NOCOUNT ON
+
+DECLARE @BakPath NVARCHAR(1000)='D:\DB_Backup\'
+DECLARE @RestoreMdfPath NVARCHAR(1000)='F:\DATA'
+DECLARE @RestoreLogPath NVARCHAR(1000)='G:\LOG'
+DECLARE @FullBakName NVARCHAR(100)=N'[[DBName]]_FULL.bak'
+
+DECLARE @Table TABLE (
+      [LogicalName] VARCHAR(256),
+      [PhysicalName] VARCHAR(256),
+      [GroupId] INT
+)
+
+DECLARE @RestoreTSQL TABLE (
+      [DBName] VARCHAR(100),
+      [TSQL] NVARCHAR(MAX)
+)
+
+DECLARE @DBName VARCHAR(100)
+DECLARE @LogicalNameData VARCHAR(256)
+DECLARE @LogicalNameLog VARCHAR(256)
+DECLARE @restoreScript VARCHAR(2000)
+
+DECLARE mycursor CURSOR FOR
+SELECT name
+FROM sys.databases
+WHERE name not in ('master','model','msdb','tempdb','distribution')
+ORDER BY name
+
+OPEN mycursor
+FETCH NEXT FROM mycursor 
+INTO @DBName
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	INSERT INTO @table
+	EXEC ('SELECT [name] as [LogicalName], [filename] as [PhysicalName], [GroupId] FROM [' + @DBName + '].dbo.sysfiles')
+
+	SET @restoreScript='RESTORE DATABASE [' + @DBName + '] FROM DISK =''' + @BakPath + replace(@FullBakName,'[[DBName]]',@DBName) + ''' WITH FILE = 1'
+
+	SELECT  @restoreScript += CHAR(13)+CHAR(10) + ',MOVE ''' +  LogicalName + ''' TO ''' + 
+			@RestoreMdfPath + '\'  + right(PhysicalName,charindex('\',reverse(PhysicalName))-1) + ''''
+	FROM   @Table
+	WHERE  GroupId > 0
+
+	SELECT  @restoreScript += ' 
+,MOVE ''' +  LogicalName + ''' TO ''' + @RestoreLogPath + '\' + right(PhysicalName,charindex('\',reverse(PhysicalName))-1) + ''''
+	FROM    @Table
+	WHERE   GroupId = 0
+
+	SET @restoreScript += ' 
+,RECOVERY, NOUNLOAD, REPLACE, STATS = 10
+GO
+
+'
+
+	INSERT INTO @RestoreTSQL([DBName], [TSQL]) VALUES(@DBName, @restoreScript)
+
+	print @restoreScript
+	DELETE FROM @table
+	
+	FETCH NEXT FROM mycursor INTO @DBName
+END
+
+CLOSE mycursor
+DEALLOCATE mycursor
+GO

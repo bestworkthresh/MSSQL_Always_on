@@ -1,0 +1,77 @@
+
+
+/*
+作者:集英
+日期:20210906
+目的:
+取出擴充事件中特定項目內容，可指定一個log檔案或者全部
+
+==========================
+修改日期:20210927
+修改者:Thresh
+修改目的:新增查看sql_text欄位，以供確認
+
+修改日期:20211124
+修改者:Thresh
+修改目的:修正時間，因為查出來的時間是格林威治時間，所以後來+8H
+
+修改日期:20220322
+修改者:Thresh
+修改目的:新增查詢欄位username 來追蹤
+
+==========================
+*/
+
+declare @xelpath nvarchar(200) 
+declare @xelpathall nvarchar(200) 
+
+/*這個參數是取最新的那個參數檔 (正在讀取 - dm_xe_session_targets)*/
+select   @xelpath = cast(t.target_data as xml).value(N'(EventFileTarget/File/@name)[1]', N'nvarchar(200)') 
+from sys.dm_xe_sessions s
+inner join sys.dm_xe_session_targets t on s.address = t.event_session_address
+where s.name = 'XTN_Maintenance_Base' 
+
+/*這個參數是取所有參數檔*/
+select   @xelpathall = 'D:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Log\XTN_Maintenance_Base_*.xel'
+--D:\Program Files\Microsoft SQL Server\MSSQL15.MSSQLSERVER\MSSQL\Log\XTN_Maintenance_Base_0_132765447309860000.xel
+
+/*
+--這個是可以查出檔案路徑
+select    cast(t.target_data as xml).value(N'(EventFileTarget/File/@name)[1]', N'nvarchar(200)') 
+from sys.dm_xe_sessions s
+inner join sys.dm_xe_session_targets t on s.address = t.event_session_address
+where s.name = 'XTN_Maintenance_Base' 
+*/
+
+select 
+*
+--distinct client_hostname,client_app_name,server_instance_name,[message],[database_name],[sql_text]
+from (
+	select
+	 xml_event_data.value(N'(event/action[@name="client_app_name"]/value)[1]', N'nvarchar(60)') as client_app_name
+	,xml_event_data.value(N'(event/action[@name="client_hostname"]/value)[1]', N'nvarchar(20)') as client_hostname
+	,xml_event_data.value(N'(event/action[@name="database_name"]/value)[1]', N'nvarchar(max)') as [database_name]
+	,DATEADD(HH,+8,xml_event_data.value(N'(event/@timestamp)[1]', N'datetime')) as date_time
+	,xml_event_data.value(N'(event/data[@name="message"]/value)[1]', N'nvarchar(max)') as [message]
+	,REPLACE( xml_event_data.value(N'(event/action[@name="sql_text"]/value)[1]', N'nvarchar(max)'),char(10),' ') as [sql_text]
+	,xml_event_data.value(N'(event/action[@name="server_instance_name"]/value)[1]', N'nvarchar(20)') as server_instance_name
+	,xml_event_data.value(N'(event/action[@name="username"]/value)[1]', N'nvarchar(20)') as username
+	from (
+		select cast(event_data as xml) as xml_event_data
+		from sys.fn_xe_file_target_read_file
+        /*修改這處的參數可轉換為查詢全部或者單檔*/
+		(@xelpath, null, null, null)
+		where object_name = 'error_reported' 
+	) m
+)t
+where 1=1 
+and date_time > '20220322'
+--and client_app_name not like '%Microsoft SQL Server Management Studio%'
+--and message not like '自動統計資料內部%'
+--and client_hostname not in ('H8FRP011','H8FRP012')
+--and message not like '%快照集隔離交易失敗%'
+--and database_name = 'FMS'
+order by date_time
+
+
+         

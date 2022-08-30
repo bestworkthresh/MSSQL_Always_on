@@ -1,0 +1,12 @@
+
+/*
+這兩個乍看之下感覺是同一個，但其實在資料庫內會被判定成不同的
+*/
+
+select '新竹巿'
+select '新竹市'
+
+
+
+select Convert(VarBinary,'新竹巿') 
+select Convert(VarBinary,'新竹市') 

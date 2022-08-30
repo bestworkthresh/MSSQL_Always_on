@@ -1,0 +1,7 @@
+--傳回特定session執行緒所有等候資訊forsql2016_and_later
+DECLARE @sessionid NVARCHAR(10) 
+SET  @sessionid = 'ALL'
+
+SELECT * 
+FROM sys.dm_exec_session_wait_stats
+WHERE ((CONVERT(NVARCHAR(10),session_id) = @sessionid ) OR (CONVERT(NVARCHAR(10),@sessionid )= 'ALL'))

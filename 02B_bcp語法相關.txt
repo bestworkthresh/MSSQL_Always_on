@@ -1,0 +1,38 @@
+﻿
+--快速產BCP語法
+/*
+select  'bcp IFRSSTG..'+name +' out  "e:\TMP\'+name+'.TXT"    -t "," -r "\n" -c -S192.168.222.183\  -Usa -PJHadmin123'
+FROM
+  (SELECT A.name
+   FROM sys.tables AS A
+   WHERE A.NAME LIKE 'TB_TMP%'
+   EXCEPT SELECT A.name
+   FROM sys.tables AS A
+   LEFT  JOIN sys.columns AS B ON A.[object_id]=B.[object_id]
+   WHERE A.NAME LIKE 'TB_TMP%'
+     AND B.NAME ='FILE_DT' ) AS X 
+*/
+--BCP導出資料到資料庫裡面
+ bcp ifrsrpdb..JH_LOAN_HIST_INFO out  "e:\JH_LOAN_HIST_INFO.TXT"    -t "," -r "\n" -c -S192.168.222.100\  -Usa -PJHadmin123
+ 
+--BCP導入資料到資料庫裡面
+bcp IFRSRPDB..JH_BOND_HIST_INFO in "e:\JH_BOND_HIST_INFO.TXT"    -t "," -r "\n" -c -S192.168.222.100\  -Usa -PJHadmin123
+
+--BCP資料庫裡面導資料出來_用語法的方式_可下條件
+bcp "select * from ifrsrpdb..JH_BOND_HIST_INFO where PK_SYS = '88'" queryout  "e:\JH_BOND_HIST_INFO.TXT"  -t "," -r "\n" -c -S192.168.222.187\  -Usa -PJHadmin123
+
+--BCP執行SQL檔案
+sqlcmd -S 192.168.222.178\ -U sa -PJHadmin123 -d JHDFM_DB_UAT -i E:\JH_DB_DFM_0413.sql   -o E:\LOG\LOG.log  -- -o這參數會把LOG檔案寫到指定檔案
+
+--直接在SQL裡面執行BCP語法
+EXEC master..xp_cmdshell 'bcp IFRSRPDB..JH_WS02_CODE_LIST out  "E:\JH_WS02_CODE_LIST.TXT"    -t "@*@" -r "@=@" -c -S192.168.222.114\  -Usa -PJHadmin123!'
+
+
+
+
+
+select  'bcp FMS..'+name +' out  "C:\tmp\'+name+'.txt"    -t "," -r "\n" -c -S172.18.122.25\  -UFRUSER -P!@@Fr741'
+from
+  (select a.name
+   from sys.tables as a
+   ) as x 

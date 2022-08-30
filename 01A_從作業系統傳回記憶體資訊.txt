@@ -1,0 +1,13 @@
+﻿
+--從作業系統傳回記憶體資訊。
+SELECT convert(NUMERIC(5,2),((total_physical_memory_kb/1024.00)/1024)) AS '可供作業系統使用之實體記憶體的大小總計'
+       , convert(NUMERIC(5,2),((available_physical_memory_kb/1024.00)/1024.00)) AS '可用實體記憶體的大小'
+       , convert(NUMERIC(5,2),((total_page_file_kb/1024.00)/1024.00 ))AS '由作業系統回報之認可限制的大小'
+       , convert(NUMERIC(5,2),((available_page_file_kb/1024.00)/1024.00)) AS '未使用的分頁檔總量'
+       , convert(NUMERIC(5,2),((system_cache_kb/1024.00)/1024.00 ))AS '系統快取記憶體的總容量'
+       , convert(NUMERIC(5,2),((kernel_paged_pool_kb/1024.00)/1024.00)) AS '分頁核心集區的總容量'
+       , convert(NUMERIC(5,2),((kernel_nonpaged_pool_kb/1024.00)/1024.00 ))AS '未分頁核心集區的總容量'
+       , system_high_memory_signal_state AS '系統記憶體資源充足通知的狀態'
+       , system_low_memory_signal_state AS '系統記憶體資源不足通知的狀態'
+       , system_memory_state_desc AS '記憶體狀態的描述'
+FROM   sys.dm_os_sys_memory 

@@ -1,0 +1,1 @@
+restore database db_name with recovery

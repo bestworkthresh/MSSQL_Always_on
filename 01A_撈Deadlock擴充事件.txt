@@ -1,0 +1,46 @@
+
+
+/*
+這個語法是掃所有實體檔案的，會跑比較久要特別注意一下
+
+*/
+
+DECLARE @xelfilepath NVARCHAR(260)
+SELECT @xelfilepath = dosdlc.path
+FROM sys.dm_os_server_diagnostics_log_configurations AS dosdlc;
+
+SELECT @xelfilepath = @xelfilepath + N'system_health_0_132903911412120000.xel' --DROP TABLE IF EXISTS  #TempTable
+
+SELECT EventData.value('(event/@timestamp)[1]', 'datetime2(7)') AS UtcTime,
+       CONVERT(DATETIME, SWITCHOFFSET(CONVERT(DATETIMEOFFSET, EventData.value('(event/@timestamp)[1]', 'VARCHAR(50)')), DATENAME(TzOffset, SYSDATETIMEOFFSET()))) AS LOCALTIME,
+       EventData.query('event/data/value/deadlock') AS XmlDeadlockReport
+FROM
+    (SELECT CONVERT(XML, event_data) AS EventData --INTO #TempTable
+    FROM sys.fn_xe_file_target_read_file(@xelfilepath, NULL, NULL, NULL) 
+    --WHERE object_name = 'xml_deadlock_report'
+    ) AS NEW
+ /*日期的部分要注意一下*/
+WHERE EventData.value('(event/@timestamp)[1]', 'datetime2(7)') > '20220228'
+ORDER BY UtcTime DESC;
+
+
+
+/*
+DeadLock XML 內容
+把查到的xml另存為xdl檔，這樣之後就可以將結果顯示出來
+*/
+SELECT 
+ CONVERT(XML, event_data).query('/event/data/value/deadlock') AS DeadLockGraph , -- 直接抓 DeadLock XML 內的 timestamp
+ CONVERT(XML, event_data).value('(event[@name="xml_deadlock_report"]/@timestamp)[1]', 'datetime') AS Execution_Time 
+ /*timestamp_utc 欄位資訊在 SQL Server 2017 才開始提供*/
+ --timestamp_utc
+FROM sys.fn_xe_file_target_read_file('system_health_*.xel', NULL, NULL, NULL) 
+WHERE [object_name] = 'xml_deadlock_report'
+
+
+
+
+SELECT cast(t.target_data AS XML).value(N'(EventFileTarget/File/@name)[1]', N'nvarchar(200)')
+FROM sys.dm_xe_sessions s
+INNER JOIN sys.dm_xe_session_targets t ON s.address = t.event_session_address
+WHERE s.name = 'system_health'

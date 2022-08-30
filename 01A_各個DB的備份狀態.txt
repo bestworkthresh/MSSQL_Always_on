@@ -1,0 +1,30 @@
+DECLARE @DBNAME NVARCHAR (20) = 'ALL' --ALL
+DECLARE @TYPE NVARCHAR (20) = 'L' --ALL
+
+SELECT database_name,
+       CASE TYPE
+           WHEN 'D' THEN '資料庫'
+           WHEN 'I' THEN '差異資料庫'
+           WHEN 'L' THEN '記錄'
+           WHEN 'F' THEN '檔案或檔案群組'
+           WHEN 'G' THEN '差異檔案'
+           WHEN 'P' THEN '部分'
+           WHEN 'Q' THEN '差異部分'
+           ELSE ''
+       END AS '備份類型',
+       m.compatibility_level AS '相容性層級設定',
+       m.collation_name,
+       CASE m.recovery_model
+           WHEN 'SIMPLE' THEN '簡單'
+           WHEN 'FULL' THEN '完整'
+           ELSE '大量記錄'
+       END AS '備份模式',
+       backup_start_date AS '備份開始時間',
+       backup_finish_date AS '備份結束時間',
+       m.[name] AS '備份說明',
+       m.is_copy_only
+FROM msdb.dbo.backupset AS m
+LEFT JOIN sys.databases AS d ON m.name = d.name
+WHERE (database_name = @DBNAME OR @DBNAME = 'ALL')
+AND( [TYPE] = @TYPE OR @TYPE = 'ALL' )
+ORDER BY backup_start_date DESC

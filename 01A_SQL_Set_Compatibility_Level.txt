@@ -1,0 +1,21 @@
+USE master
+go
+
+DECLARE @myDBName varchar(200)
+DECLARE mycursor CURSOR FOR
+SELECT [name] FROM master.sys.databases where [name] not in ('master','model','msdb','tempdb','distribution')
+
+OPEN mycursor
+FETCH NEXT FROM mycursor 
+INTO @myDBName
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	PRINT 'ALTER DATABASE [' + @myDBName + '] SET COMPATIBILITY_LEVEL=130'
+	PRINT 'GO'
+	
+	FETCH NEXT FROM mycursor INTO @myDBName
+END
+CLOSE mycursor
+DEALLOCATE mycursor
+GO

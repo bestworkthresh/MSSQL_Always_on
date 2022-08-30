@@ -1,0 +1,16 @@
+/*
+確認資料庫信件序列狀態
+*/
+
+
+use msdb
+go 
+
+sysmail_help_queue_sp @queue_type = 'Mail' ;
+
+
+
+exec sysmail_start_sp
+
+
+exec sysmail_stop_sp

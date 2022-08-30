@@ -1,0 +1,8 @@
+--列出資料庫檔案所在磁碟空間資訊
+SELECT distinct volume_mount_point as '磁碟代號', total_bytes/1024/1024/1024 as '磁碟總空間(單位:GB)', available_bytes/1024/1024/1024 '磁碟可用空間(單位:GB)'
+ ,cast (convert(float, (available_bytes/1024/1024/1024))/(total_bytes/1024/1024/1024) * 100 as int) as '磁碟空間可用率(%)'
+FROM sys.master_files AS f
+CROSS APPLY sys.dm_os_volume_stats(f.database_id, f.file_id);
+
+
+

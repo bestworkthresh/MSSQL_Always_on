@@ -1,0 +1,51 @@
+
+
+
+--查看連線最後動作時間
+USE Master
+SELECT c.session_id,
+       c.connect_time,
+       s.login_time,
+       c.last_write,
+       c.last_read,
+       c.client_net_address,
+       s.row_count,
+       s.login_name,
+       s.status
+FROM sys.dm_exec_connections c
+LEFT JOIN sys.dm_exec_sessions s ON c.session_id = s.session_id
+ORDER BY s.login_name,
+         c.last_write,
+         s.status
+
+
+
+
+
+--查詢資料庫連線正在執行的語法
+select      r.scheduler_id as 排程器識別碼,
+            status         as 要求的狀態,
+            r.session_id   as spid,
+            r.blocking_session_id as blkby,
+            substring(
+				ltrim(q.text),
+				r.statement_start_offset/2+1,
+				(case
+                 when r.statement_end_offset = -1
+                 then len(convert(nvarchar(max), q.text)) * 2
+                 else r.statement_end_offset
+                 end - r.statement_start_offset)/2)
+                 as [正在執行的 t-sql 命令],
+            r.cpu_time      as [cpu time(ms)],
+            r.start_time    as [開始時間],
+            r.total_elapsed_time as [執行總時間],
+            r.reads              as [讀取數],
+            r.writes             as [寫入數],
+            r.logical_reads      as [邏輯讀取數],
+            q.text as [完整的 t-sql 指令碼],
+            d.name               as [資料庫名稱]
+from        sys.dm_exec_requests r 
+			cross apply sys.dm_exec_sql_text(sql_handle) as q
+			left join sys.databases d on (r.database_id=d.database_id)
+where       r.session_id > 50 and r.session_id <> @@spid
+order by    r.total_elapsed_time desc

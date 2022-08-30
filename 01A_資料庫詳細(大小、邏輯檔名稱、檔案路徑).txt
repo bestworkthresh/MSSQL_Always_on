@@ -1,0 +1,13 @@
+--查詢資料庫檔案大小邏輯檔名稱檔案路徑
+SELECT 
+database_id ,
+DB_NAME(database_id) N'資料庫名稱',
+[name] N'邏輯檔案名稱',
+physical_name N'實體檔案路徑', 
+type_desc N'檔案類型', 
+state_desc N'檔案狀態', 
+size*8.0/1024 N'檔案大小(MB)',
+max_size N'檔案上限'
+FROM sys.master_files
+where database_id not in (1,2,3,4)/*排除系統資料庫*/
+order by 1  

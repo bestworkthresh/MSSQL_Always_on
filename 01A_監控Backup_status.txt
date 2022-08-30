@@ -1,0 +1,7 @@
+select top 30 
+
+ percent_complete as xx ,estimated_completion_time ,*
+
+ from sys.dm_exec_requests 
+
+order by percent_complete desc

@@ -1,0 +1,16 @@
+--查詢現在所有資料庫AG狀態
+SELECT Isnull(s.name, 'Stand_Alone') AS 'availability_groups'
+       ,m.name                       AS 'datbase_mane'
+       ,m.database_id
+       ,m.compatibility_level
+       ,m.collation_name
+       ,
+       --m.snapshot_isolation_state_desc,
+       m.recovery_model_desc
+FROM   sys.databases AS m
+       LEFT JOIN sys.availability_databases_cluster AS d
+              ON m.name = d.database_name
+       LEFT JOIN sys.availability_groups AS s
+              ON d.group_id = s.group_id
+WHERE  database_id NOT IN ( 1, 2, 3, 4 )/*排除系統資料庫*/
+ORDER  BY availability_groups  

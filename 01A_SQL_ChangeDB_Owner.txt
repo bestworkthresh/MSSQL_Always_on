@@ -1,0 +1,21 @@
+USE master
+go
+
+DECLARE @OwnerName varchar(50)='sa'
+DECLARE @myDBName varchar(200)
+DECLARE mycursor CURSOR FOR
+SELECT [name] FROM master.sys.databases where [name] not in ('master','model','msdb','tempdb','distribution')
+
+OPEN mycursor
+FETCH NEXT FROM mycursor 
+INTO @myDBName
+
+WHILE @@FETCH_STATUS = 0
+BEGIN
+	PRINT 'EXEC [' + @myDBName + '].dbo.sp_changedbowner @loginame = N''' + @OwnerName + ''''
+	
+	FETCH NEXT FROM mycursor INTO @myDBName
+END
+CLOSE mycursor
+DEALLOCATE mycursor
+GO

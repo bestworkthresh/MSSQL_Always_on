@@ -1,0 +1,10 @@
+declare @mysql varchar(4000)
+set @mysql=
+
+'use ? select 
+DB_NAME() as ''資料庫名稱'' 
+,OBJECT_NAME(object_Id) as ''資料表名稱''
+from sys.tables 
+where OBJECT_NAME(object_Id) = ''A'' '
+
+EXEC sp_MSforeachdb @mysql

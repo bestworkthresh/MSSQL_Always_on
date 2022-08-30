@@ -1,0 +1,15 @@
+/*關閉Database Mail功能*/
+sp_configure 'Database Mail XPs', 0
+RECONFIGURE WITH OVERRIDE
+GO
+
+/*刪除大量Queue的信件*/
+DECLARE @GETDATE datetime
+SET @GETDATE = GETDATE();
+EXECUTE msdb.dbo.sysmail_delete_mailitems_sp @sent_before = @GETDATE;
+GO
+
+/*開啟Database Mail功能*/
+sp_configure 'Database Mail XPs', 1
+RECONFIGURE WITH OVERRIDE
+GO

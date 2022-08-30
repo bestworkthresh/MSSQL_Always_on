@@ -1,0 +1,38 @@
+--SQL 2000
+select * from (
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''sysadmin''' as 'TSQL'
+FROM syslogins WHERE sysadmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''securityadmin'''
+FROM syslogins WHERE securityadmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''serveradmin'''
+FROM syslogins WHERE serveradmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''setupadmin'''
+FROM syslogins WHERE setupadmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''processadmin'''
+FROM syslogins WHERE processadmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''diskadmin'''
+FROM syslogins WHERE diskadmin = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''dbcreator'''
+FROM syslogins WHERE dbcreator = 1 AND isntname = 0 UNION
+SELECT loginname, 'EXEC sys.sp_addsrvrolemember @loginame = ' + loginname + ', @rolename = N''bulkadmin'''
+FROM syslogins WHERE bulkadmin = 1 AND isntname = 0) AS T
+where loginname<>'sa'
+
+
+
+--SQL 2005 ~ (OLD)
+SELECT ServerRole = g.name, MemberName = u.name, 'EXEC sys.sp_addsrvrolemember @loginame = [' + u.name + '], @rolename = N''' + g.name + '''' as 'TSQL'
+FROM sys.server_principals u, sys.server_principals g, sys.server_role_members m
+WHERE u.name<>'sa' and g.principal_id = m.role_principal_id And u.principal_id = m.member_principal_id
+Order BY 1, 2
+
+
+
+--SQL 2012 ~ (NEW)
+SELECT p.name, r.name, 'ALTER SERVER ROLE ['+r.name+'] ADD MEMBER ['+p.name+']'
+FROM sys.server_principals r
+	INNER JOIN sys.server_role_members m ON r.principal_id = m.role_principal_id
+	INNER JOIN sys.server_principals p ON p.principal_id = m.member_principal_id
+Where p.name<>'sa' 
+ORDER BY 1, 2
+

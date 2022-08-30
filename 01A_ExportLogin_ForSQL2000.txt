@@ -1,0 +1,15 @@
+SELECT REPLACE(REPLACE(name, CONVERT(VARCHAR(20), Host_Name()) + '\', '--' + CONVERT(VARCHAR(20), Host_Name()) + '\'), name, '')+ 
+	'CREATE LOGIN ' + QUOTENAME(name) +
+	CASE
+	WHEN CHARINDEX('\', name) = 0 THEN ' WITH PASSWORD = ' + REPLACE(UPPER(master.dbo.fn_varbintohexsubstring(1, password, 1, 0)), '0X', '0x') + ' HASHED, ' +
+		'SID = ' + REPLACE(UPPER(master.dbo.fn_varbintohexsubstring(1, sid, 1, 0)), '0X', '0x') + ', CHECK_EXPIRATION = OFF, CHECK_POLICY = OFF,'
+	ELSE ' FROM WINDOWS WITH'
+	END
+	+' DEFAULT_DATABASE=[' + db_name(dbid) + '], DEFAULT_LANGUAGE=[' + language + ']; ' AS [-- Logins To Be Created --]
+FROM master..sysxlogins
+WHERE srvid IS NULL
+	AND name NOT IN ('sa','BUILTIN\Administrators')
+	AND name NOT LIKE '##%##'
+	AND name NOT LIKE 'NT AUTHORITY%'
+	AND name NOT LIKE 'NT SERVICE%'
+ORDER BY 1

@@ -1,0 +1,39 @@
+SELECT c.name
+FROM sys.server_principals a
+INNER JOIN sys.server_role_members b
+ON a.principal_id = b.role_principal_id AND a.type = 'R' AND a.name ='sysadmin'
+INNER JOIN sys.server_principals c
+ON b.member_principal_id = c.principal_id
+
+
+/*
+新增一隻SP查詢伺服器角色
+if object_id ('usp_get_server_role_members') is not null
+     drop procedure usp_get_server_role_members
+go
+  
+ create procedure usp_get_server_role_members (@server_role_principal_id int)
+ as
+ begin
+     set nocount on
+  
+     select b.name
+     from sys.server_role_members a
+     join sys.server_principals b
+     on a.member_principal_id = b.principal_id
+     where a.role_principal_id = @server_role_principal_id
+ end
+  
+go
+  
+exec usp_get_server_role_members 2 -- 查詢屬於public角色的成員
+exec usp_get_server_role_members 3 -- 查詢屬於sysadmin角色的成員
+exec usp_get_server_role_members 4 -- 查詢屬於securityadmin角色的成員
+exec usp_get_server_role_members 5 -- 查詢屬於serveradmin角色的成員
+exec usp_get_server_role_members 6 -- 查詢屬於setupadmin角色的成員
+exec usp_get_server_role_members 7 -- 查詢屬於processadmin角色的成員
+exec usp_get_server_role_members 8 -- 查詢屬於diskadmin角色的成員
+exec usp_get_server_role_members 9 -- 查詢屬於dbcreator角色的成員
+exec usp_get_server_role_members 10 -- 查詢屬於bulkadmin角色的成員
+
+  */

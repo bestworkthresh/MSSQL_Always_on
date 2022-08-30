@@ -1,0 +1,30 @@
+
+--縱向欄位值進行橫向合併用法_1
+DECLARE @IN_SQL VARCHAR(MAX)
+SELECT @IN_SQL=ISNULL(+@IN_SQL +' UNION ALL ', '')+ 'SELECT '''+ X.name +''',COUNT(*) FROM '+X.name
+FROM
+  (SELECT A.name
+   FROM sys.tables AS A
+   --WHERE A.name LIKE 'TB_TMP%'
+   EXCEPT SELECT A.name
+   FROM sys.tables AS A
+   LEFT  JOIN sys.columns AS B ON A.[object_id]=B.[object_id]
+   WHERE A.name LIKE 'TB_TMP%'
+     --AND B.name ='FILE_DT'
+     ) AS X 
+     select   @IN_SQL
+EXEC(@IN_SQL)
+
+
+
+--縱向欄位值進行橫向合併用法_2
+DECLARE @IN_SQL VARCHAR(MAX)
+SELECT @IN_SQL=ISNULL(+@IN_SQL +' UNION ALL ', '')+ 'SELECT '''+'['+ X.NAME+ ']'+''',COUNT(*) FROM ['+X.NAME+']'
+FROM
+  (SELECT A.name
+   FROM SYS.TABLES AS A
+   WHERE 1=1
+) AS X  
+ORDER BY X.name
+EXEC(@IN_SQL)
+--PRINT  @IN_SQL

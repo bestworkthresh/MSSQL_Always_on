@@ -1,0 +1,99 @@
+
+--查詢這整個資料庫所有連線狀態
+DECLARE @now datetime DECLARE @whom varchar(100) DECLARE @loginame varchar(100) DECLARE @DATABASE NVARCHAR (100) DECLARE @hostname NVARCHAR(50)
+SET @now = getdate()
+SET @whom = 'ALL' --哪個連線者連進來_預設ALL
+SET @loginame = 'ALL'  --哪個資料庫使用者_預設 ALL    
+SET @DATABASE = 'ALL' --哪個資料庫_預設 ALL     FMS
+SET @hostname = 'ALL' --hostname_預設 ALL     FRTAAP02
+SET nocount OFF 
+select * from 
+(
+SELECT p.spid AS spid ,
+       rtrim(p.hostname) AS HostName ,
+       rtrim(p.loginame) AS SQLUser ,
+       rtrim(p.nt_username) AS NTUser ,
+       rtrim(p.nt_domain) AS NTDomain ,
+       rtrim(CASE
+                 WHEN p.blocked <> 0 THEN 'BLOCKED'
+                 ELSE p.status
+             END) AS status ,
+       CASE
+           WHEN p.blocked IS NULL
+                OR p.blocked = 0 THEN ''
+           ELSE convert(varchar(10), p.blocked)
+       END AS BlockedBySpid ,
+       rtrim(p.cmd) AS CurrentCommand ,
+       CASE
+           WHEN p.dbid = 0 THEN ''
+           ELSE rtrim(db_name(p.dbid))
+       END AS DBName ,
+       isnull(rtrim(p.program_name), '') AS ProgramName ,
+       cast(cast(p.waittype AS int) AS nvarchar(10)) AS CurrentWaitType ,
+       p.waittime AS CurrentWaitTime ,
+       p.lastwaittype AS LastWaitType ,
+       rtrim(p.waitresource) AS LastWaitResource ,
+       p.open_tran AS OpenTransactionCnt ,
+       p.cpu AS CPUTime ,
+       convert(bigint, p.physical_io) AS DiskIO ,
+       p.memusage AS MemoryUsage ,
+       p.hostprocess AS HostProcess ,
+
+       p.login_time AS LoginTime ,
+       p.last_batch AS LastBatchTime ,
+       p.net_address AS NetAddress ,
+       ltrim(rtrim(p.net_library)) AS NetLibrary ,
+       CASE
+           WHEN lower(p.status) NOT IN ('sleeping',
+                                        'background',
+                                        'dormant',
+                                        'suspended')
+                OR p.open_tran > 0
+                OR p.blocked > 0
+                OR upper(ltrim(rtrim(p.cmd))) LIKE 'WAITFOR%' THEN 'Y'
+           ELSE 'N'
+       END AS Active ,
+       CASE
+           WHEN p.net_address <> '' --  Non system processes
+                AND p.program_name NOT LIKE 'SQLAgent - %' THEN 'N'
+           ELSE 'Y'
+       END AS SystemProcess ,
+       CASE
+           WHEN p.last_batch = '19000101' THEN 'n/a'
+           WHEN datediff(DAY, p.last_batch, @now) > 2 THEN convert(varchar(10), datediff(DAY, p.last_batch, @now)) + ' days'
+           WHEN datediff(HOUR, p.last_batch, @now) >= 4 THEN convert(varchar(10), datediff(HOUR, p.last_batch, @now)) + ' hrs'
+           WHEN datediff(MINUTE, p.last_batch, @now) >= 10 THEN convert(varchar(10), datediff(MINUTE, p.last_batch, @now)) + ' min'
+           ELSE convert(varchar(10), datediff(SECOND, p.last_batch, @now)) + ' sec'
+       END AS TimeSinceLastBatch ,
+       p.kpid AS InternalKPID ,
+       CASE
+           WHEN (lower(p.status) IN ('background',
+                                     'dormant')
+                 AND p.open_tran <= 0
+                 AND p.blocked <= 0
+                 AND upper(ltrim(rtrim(p.cmd))) NOT LIKE 'WAITFOR%')
+                OR (lower(p.status) LIKE '%sleeping%') THEN 0
+           ELSE p.kpid
+       END AS kpid ,
+       (convert(nvarchar, p.spid) + '.' + CASE
+                                              WHEN (lower(p.status) IN ('background',
+                                                                        'dormant')
+                                                    AND p.open_tran <= 0
+                                                    AND p.blocked <= 0
+                                                    AND upper(ltrim(rtrim(p.cmd))) NOT LIKE 'WAITFOR%')
+                                                   OR (lower(p.status) LIKE '%sleeping%') THEN '0'
+                                              ELSE convert(nvarchar, p.kpid)
+                                          END) + '.' + convert(nvarchar, convert(float, p.login_time)) AS SessionLifeTimeKey ,
+       convert(float, p.login_time) AS 'LoginTimeFloatDiff'
+FROM sys.sysprocesses p WITH (readpast)
+WHERE 1 = 1
+  AND (rtrim(p.hostname) = @whom
+       OR 'ALL' = @whom)
+  AND (loginame = @loginame OR 'ALL' = @loginame )
+  AND spid>50
+  AND hostname = @hostname OR 'ALL' = @hostname
+  )as a
+WHERE 
+DBName = @DATABASE OR 'ALL' = @DATABASE
+--AND A.STATUS = 'BLOCKED'
+--AND A.DBName = 'JH_SIGN_ON'

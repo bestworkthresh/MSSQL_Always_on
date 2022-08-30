@@ -1,0 +1,12 @@
+USE msdb 
+GO
+SELECT m.name AS 'job_名稱',
+       m.enabled,
+       d.command AS'步驟語法',
+       d.step_id AS '步驟順序',
+       d.step_name AS '步驟名稱',
+       m.description AS '描述'
+FROM dbo.sysjobs AS m
+LEFT JOIN dbo.sysjobsteps AS d ON m.job_id = d.job_id
+WHERE enabled = 1 --and (d.command like 'exec%' or d.command like 'EXEC%' or d.command like '%exec%' or d.command like '%EXEC%')
+ORDER BY m.name
