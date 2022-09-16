@@ -5,7 +5,10 @@ SELECT m.name AS 'job_名稱',
        d.command AS'步驟語法',
        d.step_id AS '步驟順序',
        d.step_name AS '步驟名稱',
-       m.description AS '描述'
+       m.description AS '描述',
+       m.date_modified AS '最後修改時間',
+       --d.last_run_time AS '上次開始執行步驟的時間(hhmmss)',
+       (RIGHT(REPLICATE('0', 6) + CAST(d.last_run_time as NVARCHAR), 6)) AS '步驟開始執行時間(hhmmss)'
 FROM dbo.sysjobs AS m
 LEFT JOIN dbo.sysjobsteps AS d ON m.job_id = d.job_id
 WHERE enabled = 1 --and (d.command like 'exec%' or d.command like 'EXEC%' or d.command like '%exec%' or d.command like '%EXEC%')
