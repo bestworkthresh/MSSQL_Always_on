@@ -1,0 +1,19 @@
+/*
+當主要與次要複本之間發生連接逾時時提供額外的記錄詳細資料，
+可協助管理者釐清發生自動容錯移轉的當下，
+是否為節點間的網路異常所造成的，
+*/
+
+
+SELECT event_xml.value('(./@name)', 'varchar(1000)') AS [event_name]
+     ,DATEADD(MILLISECOND, DATEDIFF(MILLISECOND, GETUTCDATE(), GETDATE()), event_xml.value('(./@timestamp)', 'datetime')) AS [date_time]
+     --以下是收集事件所回應的欄位資訊
+     ,event_xml.value('(./data[@name="address"]/value)[1]', 'nvarchar(128)') AS [address]
+     ,event_xml.value('(./data[@name="setup_event"]/text)[1]', 'nvarchar(255)') AS [setup_event]
+     ,event_xml.value('(./data[@name="stream_status"]/text)[1]', 'nvarchar(255)') AS [stream_status]
+     ,event_xml.value('(./data[@name="error_number"]/value)[1]', 'bigint') AS [error_number]
+     ,event_xml.value('(./data[@name="error_message"]/value)[1]', 'nvarchar(max)') AS [error_message]
+FROM (SELECT file_name, CAST(event_data AS XML) AS xml_event_data
+     FROM sys.fn_xe_file_target_read_file('AlwaysOn_health*.xel', null, null, null)
+     WHERE [object_name] = 'ucs_connection_setup') AS event_table
+CROSS APPLY xml_event_data.nodes('//event') n (event_xml)
