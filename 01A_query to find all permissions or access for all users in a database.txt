@@ -32,6 +32,7 @@ ColumnName      : Name of the column of the object that the user/role is assigne
 
 --List all access provisioned to a sql user or windows user/group directly 
 SELECT  
+    [DBNAME] = DB_NAME(),
     [UserName] = CASE princ.[type] 
                     WHEN 'S' THEN princ.[name]
                     WHEN 'U' THEN ulogin.[name] COLLATE Latin1_General_CI_AI
@@ -67,6 +68,7 @@ WHERE
 UNION
 --List all access provisioned to a sql user or windows user/group through a database or application role
 SELECT  
+    [DBNAME] = DB_NAME(),
     [UserName] = CASE memberprinc.[type] 
                     WHEN 'S' THEN memberprinc.[name]
                     WHEN 'U' THEN ulogin.[name] COLLATE Latin1_General_CI_AI
@@ -106,6 +108,7 @@ LEFT JOIN
 UNION
 --List all access provisioned to the public role, which everyone gets by default
 SELECT  
+    [DBNAME] = DB_NAME(),
     [UserName] = '{All Users}',
     [UserType] = '{All Users}', 
     [DatabaseUserName] = '{All Users}',       
