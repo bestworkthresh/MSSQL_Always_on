@@ -1,0 +1,15 @@
+
+/*查看SQL Server當下是不是有Agent正在執行*/
+SELECT job.Name,
+       job.job_ID ,
+       job.Originating_Server ,
+       activity.run_requested_Date ,
+       datediff(MINUTE, activity.run_requested_Date, getdate()) AS Elapsed
+FROM msdb.dbo.sysjobs_view job
+INNER JOIN msdb.dbo.sysjobactivity activity ON (job.job_id = activity.job_id)
+WHERE run_Requested_date IS NOT NULL
+  AND start_execution_date IS NOT NULL
+  AND stop_execution_date IS NULL
+  AND activity.session_id=
+    (SELECT max(session_id)
+     FROM msdb.dbo.syssessions)
