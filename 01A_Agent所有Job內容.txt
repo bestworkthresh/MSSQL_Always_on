@@ -1,15 +1,24 @@
+/*
+該語法可以查詢SQL Server Agent內的相關資訊，包含下次執行時間
+*/
+
+
 USE msdb 
 GO
-SELECT m.name AS 'job_名稱',
-       m.enabled,
-       d.command AS'步驟語法',
-       d.step_id AS '步驟順序',
-       d.step_name AS '步驟名稱',
-       m.description AS '描述',
-       m.date_modified AS '最後修改時間',
-       --d.last_run_time AS '上次開始執行步驟的時間(hhmmss)',
-       (RIGHT(REPLICATE('0', 6) + CAST(d.last_run_time as NVARCHAR), 6)) AS '步驟開始執行時間(hhmmss)'
+
+SELECT  m.NAME AS 'job_名稱',
+        m.enabled,
+        d.command AS'步驟語法',
+        d.step_id AS '步驟順序',
+        d.step_name AS '步驟名稱',
+        m.description AS '描述', 
+        --(RIGHT(Replicate('0', 6) + Cast(d.last_run_time AS NVARCHAR), 6)) AS '上次步驟開始執行時間(hhmmss)',
+        ISNULL ((RIGHT(Replicate('0', 6) + Cast(dd.next_run_time AS NVARCHAR), 6)),'沒有設定排程') AS '下次JOB開始執行時間(hhmmss)',
+        m.date_modified AS '最後修改時間'
 FROM dbo.sysjobs AS m
 LEFT JOIN dbo.sysjobsteps AS d ON m.job_id = d.job_id
-WHERE enabled = 1 --and (d.command like 'exec%' or d.command like 'EXEC%' or d.command like '%exec%' or d.command like '%EXEC%')
-ORDER BY m.name
+LEFT JOIN dbo.sysjobschedules AS dd ON m.job_id = dd.job_id
+WHERE enabled = 1 
+AND d.step_id = 1  /*這邊避免回傳結果過多，只取各JOB的第一個步驟*/
+AND ISNULL ((RIGHT(Replicate('0', 6) + Cast(dd.next_run_time AS NVARCHAR), 6)),'沒有設定排程') > '080000' /*可以篩選對應時間後有那些JOB執行*/
+ORDER  BY m.NAME
