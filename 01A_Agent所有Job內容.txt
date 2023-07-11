@@ -6,7 +6,7 @@
 USE msdb 
 GO
 
-SELECT  m.NAME AS 'job_名稱',
+SELECT  m.name AS 'job_名稱',
         m.enabled,
         d.command AS'步驟語法',
         d.step_id AS '步驟順序',
@@ -21,4 +21,4 @@ LEFT JOIN dbo.sysjobschedules AS dd ON m.job_id = dd.job_id
 WHERE enabled = 1 
 AND d.step_id = 1  /*這邊避免回傳結果過多，只取各JOB的第一個步驟*/
 AND ISNULL ((RIGHT(Replicate('0', 6) + Cast(dd.next_run_time AS NVARCHAR), 6)),'沒有設定排程') > '080000' /*可以篩選對應時間後有那些JOB執行*/
-ORDER  BY m.NAME
+ORDER  BY m.name
